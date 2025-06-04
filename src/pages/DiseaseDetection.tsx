@@ -38,15 +38,15 @@ const DiseaseDetection = () => {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-agriculture-primary">AI Disease Detection</h1>
-          <p className="text-muted-foreground">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-agriculture-primary">AI Disease Detection</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">
             Upload a photo of your crop to detect diseases and get treatment recommendations
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <ImageUploader 
               onImageSelect={handleImageSelect}

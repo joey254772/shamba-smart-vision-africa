@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,15 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Agriculture theme colors
+				agriculture: {
+					primary: '#2E7D32', // Deep Green
+					secondary: '#4CAF50', // Medium Green
+					accent: '#81C784', // Light Green
+					soil: '#795548', // Brown
+					warning: '#FF9800', // Orange for alerts
+					danger: '#F44336', // Red for severe issues
 				}
 			},
 			borderRadius: {
@@ -84,11 +94,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-green': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.7' },
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-green': 'pulse-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
 			}
 		}
 	},

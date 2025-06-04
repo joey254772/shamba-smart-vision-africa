@@ -7,7 +7,7 @@ import SoilHealthWidget from "@/components/dashboard/SoilHealthWidget";
 import RecentAlertsWidget from "@/components/dashboard/RecentAlertsWidget";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { MapPin, Image, Database, Cloud, Bell, Users } from "lucide-react";
+import { MapPin, Image, Database, Cloud, Bell, Users, Wifi } from "lucide-react";
 
 const Index = () => {
   return (

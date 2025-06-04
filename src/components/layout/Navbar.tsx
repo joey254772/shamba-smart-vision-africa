@@ -1,8 +1,9 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Bell, User } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,14 @@ interface NavbarProps {
 }
 
 const Navbar = ({ sidebarOpen, setSidebarOpen }: NavbarProps) => {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-30 bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between h-16 px-4 md:px-6">
@@ -88,14 +97,16 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }: NavbarProps) => {
                 <div className="w-8 h-8 rounded-full bg-agriculture-primary flex items-center justify-center text-white">
                   <User className="h-5 w-5" />
                 </div>
-                <span className="ml-2 hidden md:inline-block">John Farmer</span>
+                <span className="ml-2 hidden md:inline-block">
+                  {user?.user_metadata?.full_name || user?.email || "Farmer"}
+                </span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem>Profile</DropdownMenuItem>
               <DropdownMenuItem>Farm Settings</DropdownMenuItem>
               <DropdownMenuItem>Help & Support</DropdownMenuItem>
-              <DropdownMenuItem>Sign Out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleSignOut}>Sign Out</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

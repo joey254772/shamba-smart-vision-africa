@@ -2,7 +2,6 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/b966e807-223c-4252-bb69-411970ed7863
 **URL**: https://shamba-smart-vision-africa.lovable.app/iot-devices
 
 ## How can I edit this code?

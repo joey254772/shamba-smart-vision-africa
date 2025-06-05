@@ -11,6 +11,7 @@ import Weather from "./pages/Weather";
 import CommunityReports from "./pages/CommunityReports";
 import TreatmentGuide from "./pages/TreatmentGuide";
 import CropCalendar from "./pages/CropCalendar";
+import IoTDevices from "./pages/IoTDevices";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/community" element={<CommunityReports />} />
           <Route path="/treatment-guide" element={<TreatmentGuide />} />
           <Route path="/crop-calendar" element={<CropCalendar />} />
+          <Route path="/iot-devices" element={<IoTDevices />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

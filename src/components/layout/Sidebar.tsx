@@ -75,10 +75,10 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-agriculture-primary">Menu</h2>
             <div className="h-8 w-8 bg-agriculture-accent/20 rounded-full flex items-center justify-center text-agriculture-accent">
-              <span className="text-xs font-medium">AI</span>
+              <span className="text-xs font-medium">KE</span>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">Smart agricultural tools</p>
+          <p className="text-sm text-muted-foreground mt-1">Smart farming for Kenya</p>
         </div>
         
         <nav className="space-y-1 px-2">
@@ -87,7 +87,7 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
               key={index}
               to={item.href}
               className={cn(
-                "flex items-center px-3 py-3 text-sm rounded-lg transition-colors",
+                "flex items-center px-3 py-3 text-sm rounded-lg transition-colors touch-manipulation",
                 location.pathname === item.href
                   ? "bg-agriculture-primary text-white"
                   : "hover:bg-agriculture-primary/10 text-foreground hover:text-agriculture-primary"
@@ -103,7 +103,7 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
               >
                 {item.icon}
               </div>
-              <span>{item.label}</span>
+              <span className="text-sm md:text-base">{item.label}</span>
             </Link>
           ))}
         </nav>
@@ -111,9 +111,9 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
       
       <div className="absolute bottom-0 left-0 right-0 p-4">
         <div className="bg-agriculture-primary/10 rounded-lg p-3">
-          <h3 className="text-sm font-medium text-agriculture-primary">Offline Mode Available</h3>
+          <h3 className="text-sm font-medium text-agriculture-primary">Kenya Offline Mode</h3>
           <p className="text-xs text-muted-foreground mt-1">
-            Your key data is stored for use without internet connection
+            Your crop data stored for use in remote areas
           </p>
         </div>
       </div>

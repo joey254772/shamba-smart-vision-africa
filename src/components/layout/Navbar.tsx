@@ -34,16 +34,11 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }: NavbarProps) => {
           <Link to="/" className="flex items-center ml-3">
             <div className="bg-agriculture-primary text-white p-1 rounded">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-6 w-6">
-                <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
-                <path d="M8.5 8.5v.01" />
-                <path d="M16 15.5v.01" />
-                <path d="M12 12v.01" />
-                <path d="M11 17v.01" />
-                <path d="M7 14v.01" />
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
               </svg>
             </div>
             <span className="ml-2 text-lg font-bold text-agriculture-primary dark:text-agriculture-accent">
-              AgriSense
+              AgriJolt
             </span>
           </Link>
         </div>
@@ -56,27 +51,27 @@ const Navbar = ({ sidebarOpen, setSidebarOpen }: NavbarProps) => {
                 <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-agriculture-danger"></span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuContent align="end" className="w-80 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
               <div className="flex items-center justify-between p-3 border-b">
                 <h5 className="font-medium">Notifications</h5>
                 <Button variant="ghost" size="sm">Mark all as read</Button>
               </div>
               <DropdownMenuItem>
                 <div className="flex flex-col py-1">
-                  <span className="font-medium text-agriculture-danger">Disease Alert: Tomato Blight</span>
-                  <span className="text-sm text-muted-foreground">Detected in your region - 10 min ago</span>
+                  <span className="font-medium text-agriculture-danger">Disease Alert: Coffee Berry Disease</span>
+                  <span className="text-sm text-muted-foreground">Detected in Kiambu County - 10 min ago</span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <div className="flex flex-col py-1">
                   <span className="font-medium">Weather Warning</span>
-                  <span className="text-sm text-muted-foreground">Heavy rainfall expected tomorrow</span>
+                  <span className="text-sm text-muted-foreground">Heavy rainfall expected in Nakuru tomorrow</span>
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <div className="flex flex-col py-1">
                   <span className="font-medium">Soil Moisture Low</span>
-                  <span className="text-sm text-muted-foreground">Field 2 requires irrigation</span>
+                  <span className="text-sm text-muted-foreground">Maize field in Eldoret requires irrigation</span>
                 </div>
               </DropdownMenuItem>
             </DropdownMenuContent>

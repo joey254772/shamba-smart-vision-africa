@@ -19,17 +19,28 @@ const DiseaseDetection = () => {
     
     setIsLoading(true);
     
-    // Simulate AI analysis
+    // Simulate AI analysis with Kenyan crop diseases
     setTimeout(() => {
+      const diseases = [
+        { disease: "Coffee Berry Disease", confidence: 92.3, crop: "Coffee" },
+        { disease: "Maize Streak Virus", confidence: 88.7, crop: "Maize" },
+        { disease: "Banana Xanthomonas Wilt", confidence: 85.4, crop: "Banana" },
+        { disease: "Tea Blister Blight", confidence: 91.2, crop: "Tea" }
+      ];
+      
+      const randomDisease = diseases[Math.floor(Math.random() * diseases.length)];
+      
       setResults({
-        disease: "Early Blight",
-        confidence: 89.5,
-        severity: "Moderate",
+        disease: randomDisease.disease,
+        confidence: randomDisease.confidence,
+        severity: randomDisease.confidence > 90 ? "High" : "Moderate",
+        crop: randomDisease.crop,
         recommendations: [
-          "Apply fungicide treatment immediately",
-          "Improve air circulation around plants",
-          "Remove affected leaves and dispose properly",
-          "Monitor closely for spread to other plants"
+          "Contact your local agricultural extension officer",
+          "Apply recommended fungicide for " + randomDisease.crop,
+          "Isolate affected plants to prevent spread",
+          "Monitor neighboring plants closely",
+          "Report to Kenya Plant Health Inspectorate Service (KEPHIS)"
         ]
       });
       setIsLoading(false);
@@ -42,7 +53,7 @@ const DiseaseDetection = () => {
         <div className="mb-4 sm:mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-agriculture-primary">AI Disease Detection</h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            Upload a photo of your crop to detect diseases and get treatment recommendations
+            Upload a photo of your crop to detect diseases common in Kenya
           </p>
         </div>
 

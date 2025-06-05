@@ -1,0 +1,44 @@
+
+# Python ML Requirements for Kenyan Agriculture Project
+# Install with: pip install -r requirements.txt
+
+# Core ML libraries
+numpy>=1.21.0
+pandas>=1.3.0
+scikit-learn>=1.0.0
+scipy>=1.7.0
+
+# Deep Learning
+tensorflow>=2.8.0
+keras>=2.8.0
+
+# Computer Vision
+opencv-python>=4.5.0
+Pillow>=8.3.0
+
+# Data visualization
+matplotlib>=3.4.0
+seaborn>=0.11.0
+plotly>=5.0.0
+
+# Model persistence
+joblib>=1.1.0
+
+# Data processing
+xlrd>=2.0.0
+openpyxl>=3.0.0
+
+# Web framework (for API deployment)
+flask>=2.0.0
+fastapi>=0.70.0
+uvicorn>=0.15.0
+
+# Utilities
+tqdm>=4.62.0
+requests>=2.26.0
+python-dateutil>=2.8.0
+
+# Optional: For advanced features
+# xgboost>=1.5.0
+# lightgbm>=3.3.0
+# catboost>=1.0.0

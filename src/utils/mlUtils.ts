@@ -1,556 +1,564 @@
 
 /**
- * Machine Learning Utilities - Python scikit-learn inspired functions
- * Provides ML capabilities for crop disease detection and yield prediction
+ * Machine Learning Utilities for Kenyan Agriculture
+ * Python-like ML implementations using TypeScript
  */
 
-export interface TrainingData {
-  features: number[][];
-  labels: number[];
+export interface CropData {
+  id: string;
+  name: string;
+  region: string;
+  plantingDate: string;
+  harvestDate: string;
+  cropYield: number; // renamed from yield
+  rainfall: number;
+  temperature: number;
+  soilPh: number;
+  fertilizer: string;
+  pesticides: string[];
+  diseases: string[];
 }
 
-export interface ClassificationResult {
-  prediction: number;
-  confidence: number;
-  probabilities: number[];
+export interface WeatherData {
+  date: string;
+  temperature: number;
+  humidity: number;
+  rainfall: number;
+  windSpeed: number;
+  region: string;
 }
 
-/**
- * K-Nearest Neighbors Classifier (similar to sklearn.neighbors.KNeighborsClassifier)
- */
-export class KNeighborsClassifier {
-  private trainingData: TrainingData | null = null;
-  private k: number;
-
-  constructor(k: number = 3) {
-    this.k = k;
-  }
-
-  fit(features: number[][], labels: number[]): void {
-    this.trainingData = { features, labels };
-  }
-
-  predict(testFeatures: number[][]): number[] {
-    if (!this.trainingData) throw new Error("Model not trained");
-    
-    return testFeatures.map(testFeature => {
-      const distances = this.trainingData!.features.map((trainFeature, idx) => ({
-        distance: this.euclideanDistance(testFeature, trainFeature),
-        label: this.trainingData!.labels[idx]
-      }));
-
-      distances.sort((a, b) => a.distance - b.distance);
-      const nearestK = distances.slice(0, this.k);
-      
-      // Majority vote
-      const votes: { [label: number]: number } = {};
-      nearestK.forEach(neighbor => {
-        votes[neighbor.label] = (votes[neighbor.label] || 0) + 1;
-      });
-
-      return parseInt(Object.keys(votes).reduce((a, b) => votes[parseInt(a)] > votes[parseInt(b)] ? a : b));
-    });
-  }
-
-  predictProba(testFeatures: number[][]): ClassificationResult[] {
-    if (!this.trainingData) throw new Error("Model not trained");
-    
-    return testFeatures.map(testFeature => {
-      const distances = this.trainingData!.features.map((trainFeature, idx) => ({
-        distance: this.euclideanDistance(testFeature, trainFeature),
-        label: this.trainingData!.labels[idx]
-      }));
-
-      distances.sort((a, b) => a.distance - b.distance);
-      const nearestK = distances.slice(0, this.k);
-      
-      const votes: { [label: number]: number } = {};
-      nearestK.forEach(neighbor => {
-        votes[neighbor.label] = (votes[neighbor.label] || 0) + 1;
-      });
-
-      const uniqueLabels = [...new Set(this.trainingData!.labels)].sort();
-      const probabilities = uniqueLabels.map(label => (votes[label] || 0) / this.k);
-      const prediction = parseInt(Object.keys(votes).reduce((a, b) => votes[parseInt(a)] > votes[parseInt(b)] ? a : b));
-      const confidence = Math.max(...probabilities);
-
-      return { prediction, confidence, probabilities };
-    });
-  }
-
-  private euclideanDistance(a: number[], b: number[]): number {
-    return Math.sqrt(a.reduce((sum, val, idx) => sum + Math.pow(val - b[idx], 2), 0));
-  }
+export interface SoilData {
+  region: string;
+  ph: number;
+  nitrogen: number;
+  phosphorus: number;
+  potassium: number;
+  organicMatter: number;
+  moisture: number;
 }
 
 /**
- * Random Forest Classifier (simplified version)
+ * Matrix operations similar to NumPy
  */
-export class RandomForestClassifier {
-  private trees: DecisionTree[] = [];
-  private nEstimators: number;
+export class Matrix {
+  data: number[][];
+  rows: number;
+  cols: number;
 
-  constructor(nEstimators: number = 10) {
-    this.nEstimators = nEstimators;
+  constructor(data: number[][]) {
+    this.data = data;
+    this.rows = data.length;
+    this.cols = data[0]?.length || 0;
   }
 
-  fit(features: number[][], labels: number[]): void {
-    this.trees = [];
-    
-    for (let i = 0; i < this.nEstimators; i++) {
-      const tree = new DecisionTree();
-      
-      // Bootstrap sampling
-      const bootstrapIndices = Array.from(
-        { length: features.length }, 
-        () => Math.floor(Math.random() * features.length)
-      );
-      
-      const bootstrapFeatures = bootstrapIndices.map(idx => features[idx]);
-      const bootstrapLabels = bootstrapIndices.map(idx => labels[idx]);
-      
-      tree.fit(bootstrapFeatures, bootstrapLabels);
-      this.trees.push(tree);
+  static zeros(rows: number, cols: number): Matrix {
+    const data = Array(rows).fill(null).map(() => Array(cols).fill(0));
+    return new Matrix(data);
+  }
+
+  static ones(rows: number, cols: number): Matrix {
+    const data = Array(rows).fill(null).map(() => Array(cols).fill(1));
+    return new Matrix(data);
+  }
+
+  static random(rows: number, cols: number): Matrix {
+    const data = Array(rows).fill(null).map(() => 
+      Array(cols).fill(0).map(() => Math.random())
+    );
+    return new Matrix(data);
+  }
+
+  multiply(other: Matrix): Matrix {
+    if (this.cols !== other.rows) {
+      throw new Error("Matrix dimensions don't match for multiplication");
     }
-  }
-
-  predict(testFeatures: number[][]): number[] {
-    const treePredictions = this.trees.map(tree => tree.predict(testFeatures));
     
-    return testFeatures.map((_, idx) => {
-      const votes: { [label: number]: number } = {};
-      treePredictions.forEach(predictions => {
-        const prediction = predictions[idx];
-        votes[prediction] = (votes[prediction] || 0) + 1;
-      });
-      
-      return parseInt(Object.keys(votes).reduce((a, b) => votes[parseInt(a)] > votes[parseInt(b)] ? a : b));
-    });
-  }
-}
-
-/**
- * Simple Decision Tree implementation
- */
-class DecisionTree {
-  private root: TreeNode | null = null;
-
-  fit(features: number[][], labels: number[]): void {
-    this.root = this.buildTree(features, labels, 0);
-  }
-
-  predict(testFeatures: number[][]): number[] {
-    return testFeatures.map(feature => this.predictSingle(feature, this.root!));
-  }
-
-  private buildTree(features: number[][], labels: number[], depth: number, maxDepth: number = 5): TreeNode {
-    const uniqueLabels = [...new Set(labels)];
-    
-    if (uniqueLabels.length === 1 || depth >= maxDepth) {
-      return { isLeaf: true, prediction: this.mostCommonLabel(labels) };
-    }
-
-    const bestSplit = this.findBestSplit(features, labels);
-    if (!bestSplit) {
-      return { isLeaf: true, prediction: this.mostCommonLabel(labels) };
-    }
-
-    const leftIndices: number[] = [];
-    const rightIndices: number[] = [];
-    
-    features.forEach((feature, idx) => {
-      if (feature[bestSplit.featureIndex] <= bestSplit.threshold) {
-        leftIndices.push(idx);
-      } else {
-        rightIndices.push(idx);
+    const result = Matrix.zeros(this.rows, other.cols);
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < other.cols; j++) {
+        for (let k = 0; k < this.cols; k++) {
+          result.data[i][j] += this.data[i][k] * other.data[k][j];
+        }
       }
-    });
+    }
+    return result;
+  }
 
-    const leftFeatures = leftIndices.map(idx => features[idx]);
-    const leftLabels = leftIndices.map(idx => labels[idx]);
-    const rightFeatures = rightIndices.map(idx => features[idx]);
-    const rightLabels = rightIndices.map(idx => labels[idx]);
+  transpose(): Matrix {
+    const result = Matrix.zeros(this.cols, this.rows);
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        result.data[j][i] = this.data[i][j];
+      }
+    }
+    return result;
+  }
 
+  add(other: Matrix): Matrix {
+    const result = Matrix.zeros(this.rows, this.cols);
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        result.data[i][j] = this.data[i][j] + other.data[i][j];
+      }
+    }
+    return result;
+  }
+
+  subtract(other: Matrix): Matrix {
+    const result = Matrix.zeros(this.rows, this.cols);
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        result.data[i][j] = this.data[i][j] - other.data[i][j];
+      }
+    }
+    return result;
+  }
+
+  scale(scalar: number): Matrix {
+    const result = Matrix.zeros(this.rows, this.cols);
+    for (let i = 0; i < this.rows; i++) {
+      for (let j = 0; j < this.cols; j++) {
+        result.data[i][j] = this.data[i][j] * scalar;
+      }
+    }
+    return result;
+  }
+}
+
+/**
+ * Linear Regression Implementation (Similar to scikit-learn)
+ */
+export class LinearRegression {
+  weights: Matrix;
+  bias: number;
+  fitted: boolean;
+
+  constructor() {
+    this.weights = new Matrix([]);
+    this.bias = 0;
+    this.fitted = false;
+  }
+
+  fit(X: Matrix, y: number[]): void {
+    // Add bias column to X
+    const XWithBias = this.addBiasColumn(X);
+    
+    // Normal equation: θ = (X^T * X)^(-1) * X^T * y
+    const XT = XWithBias.transpose();
+    const XTX = XT.multiply(XWithBias);
+    const XTXInv = this.pseudoInverse(XTX);
+    const yMatrix = new Matrix(y.map(val => [val]));
+    const theta = XTXInv.multiply(XT).multiply(yMatrix);
+    
+    this.bias = theta.data[0][0];
+    this.weights = new Matrix(theta.data.slice(1));
+    this.fitted = true;
+  }
+
+  predict(X: Matrix): number[] {
+    if (!this.fitted) {
+      throw new Error("Model must be fitted before prediction");
+    }
+    
+    const predictions: number[] = [];
+    for (let i = 0; i < X.rows; i++) {
+      let prediction = this.bias;
+      for (let j = 0; j < X.cols; j++) {
+        prediction += X.data[i][j] * this.weights.data[j][0];
+      }
+      predictions.push(prediction);
+    }
+    return predictions;
+  }
+
+  score(X: Matrix, y: number[]): number {
+    const predictions = this.predict(X);
+    const yMean = y.reduce((sum, val) => sum + val, 0) / y.length;
+    
+    let totalSumSquares = 0;
+    let residualSumSquares = 0;
+    
+    for (let i = 0; i < y.length; i++) {
+      totalSumSquares += Math.pow(y[i] - yMean, 2);
+      residualSumSquares += Math.pow(y[i] - predictions[i], 2);
+    }
+    
+    return 1 - (residualSumSquares / totalSumSquares);
+  }
+
+  private addBiasColumn(X: Matrix): Matrix {
+    const XWithBias = Matrix.zeros(X.rows, X.cols + 1);
+    for (let i = 0; i < X.rows; i++) {
+      XWithBias.data[i][0] = 1; // bias column
+      for (let j = 0; j < X.cols; j++) {
+        XWithBias.data[i][j + 1] = X.data[i][j];
+      }
+    }
+    return XWithBias;
+  }
+
+  private pseudoInverse(matrix: Matrix): Matrix {
+    // Simplified pseudo-inverse using Gauss-Jordan elimination
+    const n = matrix.rows;
+    const augmented = Matrix.zeros(n, 2 * n);
+    
+    // Create augmented matrix [A|I]
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        augmented.data[i][j] = matrix.data[i][j];
+        augmented.data[i][j + n] = i === j ? 1 : 0;
+      }
+    }
+    
+    // Gauss-Jordan elimination
+    for (let i = 0; i < n; i++) {
+      // Make diagonal element 1
+      const pivot = augmented.data[i][i];
+      if (Math.abs(pivot) < 1e-10) continue;
+      
+      for (let j = 0; j < 2 * n; j++) {
+        augmented.data[i][j] /= pivot;
+      }
+      
+      // Make other elements in column 0
+      for (let k = 0; k < n; k++) {
+        if (k !== i) {
+          const factor = augmented.data[k][i];
+          for (let j = 0; j < 2 * n; j++) {
+            augmented.data[k][j] -= factor * augmented.data[i][j];
+          }
+        }
+      }
+    }
+    
+    // Extract inverse matrix
+    const inverse = Matrix.zeros(n, n);
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        inverse.data[i][j] = augmented.data[i][j + n];
+      }
+    }
+    
+    return inverse;
+  }
+}
+
+/**
+ * Decision Tree Classifier
+ */
+export class DecisionTreeClassifier {
+  tree: any;
+  fitted: boolean;
+
+  constructor() {
+    this.tree = null;
+    this.fitted = false;
+  }
+
+  fit(X: Matrix, y: string[]): void {
+    this.tree = this.buildTree(X, y);
+    this.fitted = true;
+  }
+
+  predict(X: Matrix): string[] {
+    if (!this.fitted) {
+      throw new Error("Model must be fitted before prediction");
+    }
+    
+    const predictions: string[] = [];
+    for (let i = 0; i < X.rows; i++) {
+      const sample = X.data[i];
+      predictions.push(this.predictSample(sample, this.tree));
+    }
+    return predictions;
+  }
+
+  private buildTree(X: Matrix, y: string[]): any {
+    // Check if all labels are the same
+    const uniqueLabels = [...new Set(y)];
+    if (uniqueLabels.length === 1) {
+      return { type: 'leaf', label: uniqueLabels[0] };
+    }
+    
+    // Find best split
+    const bestSplit = this.findBestSplit(X, y);
+    if (!bestSplit) {
+      // Return most common label
+      const labelCounts = this.countLabels(y);
+      const mostCommon = Object.keys(labelCounts).reduce((a, b) => 
+        labelCounts[a] > labelCounts[b] ? a : b
+      );
+      return { type: 'leaf', label: mostCommon };
+    }
+    
+    // Split data
+    const { leftIndices, rightIndices } = this.splitData(X, bestSplit);
+    const leftX = new Matrix(leftIndices.map(i => X.data[i]));
+    const leftY = leftIndices.map(i => y[i]);
+    const rightX = new Matrix(rightIndices.map(i => X.data[i]));
+    const rightY = rightIndices.map(i => y[i]);
+    
     return {
-      isLeaf: false,
-      featureIndex: bestSplit.featureIndex,
+      type: 'node',
+      feature: bestSplit.feature,
       threshold: bestSplit.threshold,
-      left: this.buildTree(leftFeatures, leftLabels, depth + 1, maxDepth),
-      right: this.buildTree(rightFeatures, rightLabels, depth + 1, maxDepth)
+      left: this.buildTree(leftX, leftY),
+      right: this.buildTree(rightX, rightY)
     };
   }
 
-  private findBestSplit(features: number[][], labels: number[]): { featureIndex: number; threshold: number } | null {
+  private findBestSplit(X: Matrix, y: string[]): any {
     let bestGini = Infinity;
-    let bestSplit: { featureIndex: number; threshold: number } | null = null;
-
-    const numFeatures = features[0].length;
+    let bestSplit = null;
     
-    for (let featureIdx = 0; featureIdx < numFeatures; featureIdx++) {
-      const values = features.map(f => f[featureIdx]);
+    for (let feature = 0; feature < X.cols; feature++) {
+      const values = X.data.map(row => row[feature]);
       const uniqueValues = [...new Set(values)].sort((a, b) => a - b);
       
       for (let i = 0; i < uniqueValues.length - 1; i++) {
         const threshold = (uniqueValues[i] + uniqueValues[i + 1]) / 2;
-        const gini = this.calculateGini(features, labels, featureIdx, threshold);
+        const gini = this.calculateGini(X, y, feature, threshold);
         
         if (gini < bestGini) {
           bestGini = gini;
-          bestSplit = { featureIndex: featureIdx, threshold };
+          bestSplit = { feature, threshold };
         }
       }
     }
-
+    
     return bestSplit;
   }
 
-  private calculateGini(features: number[][], labels: number[], featureIndex: number, threshold: number): number {
-    const leftLabels: number[] = [];
-    const rightLabels: number[] = [];
+  private calculateGini(X: Matrix, y: string[], feature: number, threshold: number): number {
+    const { leftIndices, rightIndices } = this.splitData(X, { feature, threshold });
     
-    features.forEach((feature, idx) => {
-      if (feature[featureIndex] <= threshold) {
-        leftLabels.push(labels[idx]);
-      } else {
-        rightLabels.push(labels[idx]);
-      }
-    });
-
-    const totalSize = labels.length;
-    const leftSize = leftLabels.length;
-    const rightSize = rightLabels.length;
+    if (leftIndices.length === 0 || rightIndices.length === 0) {
+      return Infinity;
+    }
     
-    if (leftSize === 0 || rightSize === 0) return Infinity;
-
-    const leftGini = this.giniImpurity(leftLabels);
-    const rightGini = this.giniImpurity(rightLabels);
+    const leftY = leftIndices.map(i => y[i]);
+    const rightY = rightIndices.map(i => y[i]);
     
-    return (leftSize / totalSize) * leftGini + (rightSize / totalSize) * rightGini;
+    const leftGini = this.giniImpurity(leftY);
+    const rightGini = this.giniImpurity(rightY);
+    
+    const totalSamples = y.length;
+    const weightedGini = (leftY.length / totalSamples) * leftGini + 
+                        (rightY.length / totalSamples) * rightGini;
+    
+    return weightedGini;
   }
 
-  private giniImpurity(labels: number[]): number {
-    const labelCounts: { [label: number]: number } = {};
-    labels.forEach(label => {
-      labelCounts[label] = (labelCounts[label] || 0) + 1;
-    });
+  private splitData(X: Matrix, split: { feature: number, threshold: number }): 
+    { leftIndices: number[], rightIndices: number[] } {
+    const leftIndices: number[] = [];
+    const rightIndices: number[] = [];
+    
+    for (let i = 0; i < X.rows; i++) {
+      if (X.data[i][split.feature] <= split.threshold) {
+        leftIndices.push(i);
+      } else {
+        rightIndices.push(i);
+      }
+    }
+    
+    return { leftIndices, rightIndices };
+  }
 
+  private giniImpurity(labels: string[]): number {
+    const labelCounts = this.countLabels(labels);
+    const total = labels.length;
+    
     let gini = 1;
-    Object.values(labelCounts).forEach(count => {
-      const probability = count / labels.length;
+    for (const count of Object.values(labelCounts)) {
+      const probability = count / total;
       gini -= probability * probability;
-    });
-
+    }
+    
     return gini;
   }
 
-  private mostCommonLabel(labels: number[]): number {
-    const labelCounts: { [label: number]: number } = {};
-    labels.forEach(label => {
-      labelCounts[label] = (labelCounts[label] || 0) + 1;
-    });
-
-    return parseInt(Object.keys(labelCounts).reduce((a, b) => labelCounts[parseInt(a)] > labelCounts[parseInt(b)] ? a : b));
+  private countLabels(labels: string[]): { [key: string]: number } {
+    const counts: { [key: string]: number } = {};
+    for (const label of labels) {
+      counts[label] = (counts[label] || 0) + 1;
+    }
+    return counts;
   }
 
-  private predictSingle(feature: number[], node: TreeNode): number {
-    if (node.isLeaf) {
-      return node.prediction!;
+  private predictSample(sample: number[], node: any): string {
+    if (node.type === 'leaf') {
+      return node.label;
     }
-
-    if (feature[node.featureIndex!] <= node.threshold!) {
-      return this.predictSingle(feature, node.left!);
+    
+    if (sample[node.feature] <= node.threshold) {
+      return this.predictSample(sample, node.left);
     } else {
-      return this.predictSingle(feature, node.right!);
+      return this.predictSample(sample, node.right);
     }
   }
-}
-
-interface TreeNode {
-  isLeaf: boolean;
-  prediction?: number;
-  featureIndex?: number;
-  threshold?: number;
-  left?: TreeNode;
-  right?: TreeNode;
 }
 
 /**
- * Plant Disease Detection using ML
+ * Kenyan Agriculture ML Utilities
  */
-export class PlantDiseaseDetector {
-  private model: RandomForestClassifier;
-  private diseaseMap: { [key: number]: string } = {
-    0: "Healthy",
-    1: "Early Blight",
-    2: "Late Blight", 
-    3: "Bacterial Spot",
-    4: "Mosaic Virus",
-    5: "Leaf Mold"
-  };
-
-  constructor() {
-    this.model = new RandomForestClassifier(20);
-    this.trainModel();
-  }
-
-  private trainModel(): void {
-    // Simulated training data for plant disease detection
-    // In a real scenario, this would come from actual image features
+export class KenyanAgricultureML {
+  static prepareCropData(crops: CropData[]): { features: Matrix, targets: number[] } {
     const features: number[][] = [];
-    const labels: number[] = [];
-
-    // Generate synthetic training data
-    for (let i = 0; i < 1000; i++) {
-      const diseaseClass = Math.floor(Math.random() * 6);
-      const feature = this.generateSyntheticFeatures(diseaseClass);
-      features.push(feature);
-      labels.push(diseaseClass);
+    const targets: number[] = [];
+    
+    for (const crop of crops) {
+      const plantingMonth = new Date(crop.plantingDate).getMonth();
+      const harvestMonth = new Date(crop.harvestDate).getMonth();
+      const growthPeriod = harvestMonth - plantingMonth;
+      
+      features.push([
+        crop.rainfall,
+        crop.temperature,
+        crop.soilPh,
+        plantingMonth,
+        growthPeriod,
+        crop.pesticides.length,
+        crop.diseases.length
+      ]);
+      
+      targets.push(crop.cropYield);
     }
-
-    this.model.fit(features, labels);
+    
+    return {
+      features: new Matrix(features),
+      targets
+    };
   }
 
-  private generateSyntheticFeatures(diseaseClass: number): number[] {
-    // Simulate image features: color ratios, texture measures, shape descriptors
-    const baseFeatures = [
-      Math.random(), // Red channel ratio
-      Math.random(), // Green channel ratio  
-      Math.random(), // Blue channel ratio
-      Math.random(), // Texture uniformity
-      Math.random(), // Edge density
-      Math.random(), // Spot count
-      Math.random(), // Leaf area affected
-      Math.random()  // Color variance
-    ];
-
-    // Modify features based on disease class
-    switch (diseaseClass) {
-      case 1: // Early Blight
-        baseFeatures[0] += 0.3; // More red
-        baseFeatures[5] += 0.4; // More spots
-        break;
-      case 2: // Late Blight
-        baseFeatures[1] -= 0.2; // Less green
-        baseFeatures[6] += 0.5; // More area affected
-        break;
-      case 3: // Bacterial Spot
-        baseFeatures[5] += 0.6; // Many spots
-        baseFeatures[4] += 0.3; // More edges
-        break;
-      case 4: // Mosaic Virus
-        baseFeatures[7] += 0.4; // High color variance
-        baseFeatures[1] -= 0.3; // Reduced green
-        break;
-      case 5: // Leaf Mold
-        baseFeatures[1] -= 0.4; // Much less green
-        baseFeatures[3] -= 0.3; // Less uniform texture
-        break;
-    }
-
-    return baseFeatures.map(f => Math.max(0, Math.min(1, f))); // Clamp to [0,1]
+  static predictCropYield(
+    rainfall: number,
+    temperature: number,
+    soilPh: number,
+    plantingMonth: number,
+    growthPeriod: number,
+    pesticideCount: number,
+    diseaseCount: number,
+    model: LinearRegression
+  ): number {
+    const features = new Matrix([[
+      rainfall, temperature, soilPh, plantingMonth, 
+      growthPeriod, pesticideCount, diseaseCount
+    ]]);
+    
+    return model.predict(features)[0];
   }
 
-  detectDisease(imageFeatures: number[]): {
-    disease: string;
-    confidence: number;
-    severity: "Low" | "Medium" | "High";
-    recommendations: string[];
-  } {
-    const result = this.model.predict([imageFeatures])[0];
-    const disease = this.diseaseMap[result];
+  static classifyDiseaseRisk(
+    humidity: number,
+    temperature: number,
+    rainfall: number,
+    soilMoisture: number
+  ): string {
+    // Simple rule-based classification for disease risk
+    let riskScore = 0;
     
-    // Calculate confidence and severity based on feature values
-    const severity = this.calculateSeverity(imageFeatures);
-    const confidence = Math.random() * 0.3 + 0.7; // Simulate 70-100% confidence
+    if (humidity > 80) riskScore += 2;
+    else if (humidity > 60) riskScore += 1;
     
-    const recommendations = this.getRecommendations(disease, severity);
-
-    return { disease, confidence, severity, recommendations };
+    if (temperature > 25 && temperature < 30) riskScore += 2;
+    else if (temperature > 30) riskScore += 1;
+    
+    if (rainfall > 100) riskScore += 2;
+    else if (rainfall > 50) riskScore += 1;
+    
+    if (soilMoisture > 80) riskScore += 1;
+    
+    if (riskScore >= 6) return "High Risk";
+    else if (riskScore >= 3) return "Medium Risk";
+    else return "Low Risk";
   }
 
-  private calculateSeverity(features: number[]): "Low" | "Medium" | "High" {
-    const areaAffected = features[6]; // Leaf area affected
-    const spotCount = features[5]; // Spot count
-    
-    const severityScore = (areaAffected + spotCount) / 2;
-    
-    if (severityScore > 0.7) return "High";
-    if (severityScore > 0.4) return "Medium";
-    return "Low";
-  }
-
-  private getRecommendations(disease: string, severity: "Low" | "Medium" | "High"): string[] {
-    const baseRecommendations: { [key: string]: string[] } = {
+  static recommendTreatment(
+    diseaseType: string,
+    severity: string,
+    cropType: string
+  ): string[] {
+    const treatments: { [key: string]: string[] } = {
       "Early Blight": [
         "Apply copper-based fungicide",
         "Improve air circulation",
-        "Remove affected leaves",
-        "Avoid overhead watering"
+        "Remove infected plant debris",
+        "Use drip irrigation to avoid leaf wetness"
       ],
       "Late Blight": [
-        "Apply systemic fungicide immediately",
-        "Remove infected plants",
-        "Improve drainage",
-        "Monitor weather conditions"
+        "Apply systemic fungicide",
+        "Destroy infected plants immediately",
+        "Avoid overhead watering",
+        "Apply preventive copper sprays"
       ],
-      "Bacterial Spot": [
-        "Apply copper-based bactericide",
-        "Remove infected plant material",
-        "Avoid working in wet conditions",
-        "Use disease-free seeds"
+      "Bacterial Wilt": [
+        "Remove and destroy infected plants",
+        "Improve soil drainage",
+        "Rotate with non-host crops",
+        "Use resistant varieties"
       ],
-      "Mosaic Virus": [
-        "Remove infected plants immediately",
-        "Control aphid vectors",
-        "Use virus-free planting material",
-        "Practice crop rotation"
-      ],
-      "Leaf Mold": [
-        "Improve greenhouse ventilation",
-        "Reduce humidity levels",
-        "Apply appropriate fungicide",
-        "Remove lower leaves"
-      ],
-      "Healthy": [
-        "Continue current management practices",
-        "Monitor regularly for changes",
-        "Maintain proper nutrition",
-        "Ensure adequate water supply"
+      "Powdery Mildew": [
+        "Apply sulfur-based fungicide",
+        "Increase plant spacing",
+        "Prune for better air circulation",
+        "Apply neem oil spray"
       ]
     };
-
-    let recommendations = baseRecommendations[disease] || [];
     
-    if (severity === "High") {
-      recommendations = [
-        "URGENT: Take immediate action",
-        ...recommendations,
-        "Consider consulting agricultural extension officer"
-      ];
-    }
-
-    return recommendations;
-  }
-}
-
-/**
- * Crop Yield Predictor using ML
- */
-export class CropYieldPredictor {
-  private model: LinearRegression;
-
-  constructor() {
-    this.model = new LinearRegression();
-    this.trainModel();
-  }
-
-  private trainModel(): void {
-    // Generate synthetic training data for yield prediction
-    const features: number[][] = [];
-    const yields: number[] = [];
-
-    for (let i = 0; i < 500; i++) {
-      const rainfall = Math.random() * 200 + 300; // 300-500mm
-      const temperature = Math.random() * 10 + 20; // 20-30°C
-      const soilPh = Math.random() * 2 + 6; // 6-8 pH
-      const fertilizer = Math.random() * 100 + 50; // 50-150 kg/ha
-      
-      // Calculate yield based on conditions
-      let yield = 20; // Base yield
-      yield += (rainfall - 400) * 0.05; // Rainfall effect
-      yield += (25 - Math.abs(temperature - 25)) * 0.8; // Temperature effect
-      yield += (7 - Math.abs(soilPh - 7)) * 3; // pH effect
-      yield += fertilizer * 0.2; // Fertilizer effect
-      yield += (Math.random() - 0.5) * 10; // Random noise
-      
-      features.push([rainfall, temperature, soilPh, fertilizer]);
-      yields.push(Math.max(5, yield)); // Minimum yield of 5
-    }
-
-    this.model.fit(features, yields);
-  }
-
-  predictYield(conditions: {
-    rainfall: number;
-    temperature: number;
-    soilPh: number;
-    fertilizer: number;
-  }): {
-    predictedYield: number;
-    confidence: number;
-    factors: { factor: string; impact: string }[];
-  } {
-    const features = [[conditions.rainfall, conditions.temperature, conditions.soilPh, conditions.fertilizer]];
-    const prediction = this.model.predict(features)[0];
-    
-    // Analyze impact factors
-    const factors = [
-      {
-        factor: "Rainfall",
-        impact: conditions.rainfall > 450 ? "Positive" : conditions.rainfall < 350 ? "Negative" : "Neutral"
-      },
-      {
-        factor: "Temperature", 
-        impact: Math.abs(conditions.temperature - 25) < 3 ? "Positive" : "Negative"
-      },
-      {
-        factor: "Soil pH",
-        impact: Math.abs(conditions.soilPh - 7) < 0.5 ? "Positive" : "Negative"
-      },
-      {
-        factor: "Fertilizer",
-        impact: conditions.fertilizer > 80 ? "Positive" : "Negative"
-      }
+    return treatments[diseaseType] || [
+      "Consult local agricultural extension officer",
+      "Improve general plant health",
+      "Monitor closely for symptom development"
     ];
-
-    return {
-      predictedYield: Math.round(prediction * 10) / 10,
-      confidence: 0.85, // Simulated confidence
-      factors
-    };
   }
 }
 
-// Linear Regression implementation for crop yield prediction
-class LinearRegression {
-  private weights: number[] = [];
-  private bias: number = 0;
-
-  fit(features: number[][], targets: number[]): void {
-    const n = features.length;
-    const numFeatures = features[0].length;
-    
-    this.weights = new Array(numFeatures).fill(0);
-    this.bias = 0;
-
-    const learningRate = 0.001;
-    const epochs = 1000;
-
-    for (let epoch = 0; epoch < epochs; epoch++) {
-      const predictions = this.predict(features);
-      
-      const weightGradients = new Array(numFeatures).fill(0);
-      let biasGradient = 0;
-
-      for (let i = 0; i < n; i++) {
-        const error = predictions[i] - targets[i];
-        for (let j = 0; j < numFeatures; j++) {
-          weightGradients[j] += error * features[i][j];
-        }
-        biasGradient += error;
-      }
-
-      for (let j = 0; j < numFeatures; j++) {
-        this.weights[j] -= learningRate * weightGradients[j] / n;
-      }
-      this.bias -= learningRate * biasGradient / n;
-    }
+// Sample data for testing
+export const sampleKenyanCrops: CropData[] = [
+  {
+    id: "1",
+    name: "Maize",
+    region: "Central Kenya",
+    plantingDate: "2024-03-15",
+    harvestDate: "2024-08-15",
+    cropYield: 45.2,
+    rainfall: 850,
+    temperature: 24,
+    soilPh: 6.2,
+    fertilizer: "NPK 17:17:17",
+    pesticides: ["Bt spray", "Neem oil"],
+    diseases: ["Early Blight"]
+  },
+  {
+    id: "2",
+    name: "Coffee",
+    region: "Central Kenya",
+    plantingDate: "2024-04-01",
+    harvestDate: "2024-12-01",
+    cropYield: 12.8,
+    rainfall: 1200,
+    temperature: 20,
+    soilPh: 5.8,
+    fertilizer: "Organic compost",
+    pesticides: ["Copper spray"],
+    diseases: []
+  },
+  {
+    id: "3",
+    name: "Beans",
+    region: "Eastern Kenya",
+    plantingDate: "2024-02-20",
+    harvestDate: "2024-06-20",
+    cropYield: 18.5,
+    rainfall: 600,
+    temperature: 26,
+    soilPh: 6.5,
+    fertilizer: "DAP",
+    pesticides: ["Organic pyrethrum"],
+    diseases: ["Bacterial Wilt"]
   }
+];
 
-  predict(features: number[][]): number[] {
-    return features.map(feature => {
-      const sum = feature.reduce((acc, val, idx) => acc + val * this.weights[idx], 0);
-      return sum + this.bias;
-    });
-  }
-}
+export default KenyanAgricultureML;

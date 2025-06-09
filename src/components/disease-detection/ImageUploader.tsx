@@ -1,8 +1,8 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Image } from "lucide-react";
+import { Image, Camera } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploaderProps {
@@ -15,16 +15,24 @@ interface ImageUploaderProps {
 const ImageUploader = ({ onImageSelect, selectedImage, onAnalyze, isLoading }: ImageUploaderProps) => {
   const { toast } = useToast();
   const [preview, setPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      console.log('File selected:', selectedFile.name, selectedFile.type);
       onImageSelect(selectedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreview(reader.result as string);
       };
       reader.readAsDataURL(selectedFile);
+      
+      toast({
+        title: "Image Selected",
+        description: "Your crop image is ready for analysis",
+      });
     }
   };
 
@@ -41,6 +49,20 @@ const ImageUploader = ({ onImageSelect, selectedImage, onAnalyze, isLoading }: I
     await onAnalyze();
   };
 
+  const handleTakePhoto = () => {
+    console.log('Camera button clicked');
+    if (cameraInputRef.current) {
+      cameraInputRef.current.click();
+    }
+  };
+
+  const handleSelectImage = () => {
+    console.log('Select image button clicked');
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
@@ -49,6 +71,7 @@ const ImageUploader = ({ onImageSelect, selectedImage, onAnalyze, isLoading }: I
     e.preventDefault();
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
+      console.log('File dropped:', droppedFile.name, droppedFile.type);
       onImageSelect(droppedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -75,10 +98,10 @@ const ImageUploader = ({ onImageSelect, selectedImage, onAnalyze, isLoading }: I
     <Card className="dashboard-card">
       <CardContent className="pt-6">
         <div
-          className="border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 sm:p-8 cursor-pointer hover:bg-muted/50 transition-colors touch-manipulation"
+          className="border-2 border-dashed rounded-xl flex flex-col items-center justify-center p-4 sm:p-8 cursor-pointer hover:bg-muted/50 transition-colors touch-manipulation min-h-[200px]"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
-          onClick={() => document.getElementById("file-upload")?.click()}
+          onClick={handleSelectImage}
         >
           {preview ? (
             <div className="space-y-4 w-full">
@@ -102,34 +125,47 @@ const ImageUploader = ({ onImageSelect, selectedImage, onAnalyze, isLoading }: I
               <p className="text-sm text-center text-muted-foreground mb-6 max-w-xs">
                 Take a clear photo of your plant leaves or stems. AI will analyze and detect any disease.
               </p>
-              <div className="flex flex-col sm:flex-row gap-2 w-full max-w-xs">
+              <div className="flex flex-col gap-3 w-full max-w-xs">
                 <Button
-                  className="bg-agriculture-primary hover:bg-agriculture-primary/90 flex-1"
-                  size="sm"
-                >
-                  Select Image
-                </Button>
-                <Button
-                  className="bg-agriculture-secondary hover:bg-agriculture-secondary/90 flex-1"
+                  type="button"
+                  className="bg-agriculture-primary hover:bg-agriculture-primary/90 flex items-center justify-center gap-2 py-3"
                   size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Trigger camera on mobile devices
-                    const input = document.getElementById("file-upload") as HTMLInputElement;
-                    if (input) {
-                      input.capture = "environment";
-                      input.click();
-                    }
+                    handleTakePhoto();
                   }}
                 >
+                  <Camera className="h-4 w-4" />
                   Take Photo
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-agriculture-secondary hover:bg-agriculture-secondary/90 flex items-center justify-center gap-2 py-3"
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectImage();
+                  }}
+                >
+                  <Image className="h-4 w-4" />
+                  Select from Gallery
                 </Button>
               </div>
             </div>
           )}
+          
+          {/* Hidden file inputs */}
           <input
+            ref={fileInputRef}
             type="file"
-            id="file-upload"
+            className="hidden"
+            accept="image/*"
+            onChange={handleFileChange}
+          />
+          <input
+            ref={cameraInputRef}
+            type="file"
             className="hidden"
             accept="image/*"
             capture="environment"
@@ -140,7 +176,7 @@ const ImageUploader = ({ onImageSelect, selectedImage, onAnalyze, isLoading }: I
         {preview && (
           <div className="mt-6 flex justify-center">
             <Button
-              className="bg-agriculture-primary hover:bg-agriculture-primary/90 w-full max-w-xs"
+              className="bg-agriculture-primary hover:bg-agriculture-primary/90 w-full max-w-xs py-3"
               disabled={isLoading}
               onClick={handleSubmit}
             >

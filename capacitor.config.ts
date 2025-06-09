@@ -15,7 +15,16 @@ const config: CapacitorConfig = {
     },
     Geolocation: {
       permissions: ['location']
+    },
+    Device: {
+      permissions: ['camera']
     }
+  },
+  android: {
+    allowMixedContent: true
+  },
+  ios: {
+    contentInset: 'automatic'
   }
 };
 

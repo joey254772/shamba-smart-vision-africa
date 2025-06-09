@@ -1,10 +1,10 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   AlertTriangle, 
   CheckCircle, 
@@ -13,8 +13,12 @@ import {
   Droplets, 
   ThermometerSun,
   Calendar,
-  MapPin
+  MapPin,
+  Phone,
+  ExternalLink
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface DetectionResultsProps {
   results: any;
@@ -22,6 +26,55 @@ interface DetectionResultsProps {
 }
 
 const DetectionResults = ({ results, isLoading }: DetectionResultsProps) => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+
+  // Mock suppliers data for Kenya
+  const suppliers = [
+    {
+      name: "Kenya Agro Supplies Ltd",
+      location: "Nairobi",
+      phone: "+254 700 123 456",
+      speciality: "Fungicides & Pesticides",
+      distance: "2.5 km"
+    },
+    {
+      name: "Farmers Choice Agro",
+      location: "Nakuru",
+      phone: "+254 722 987 654",
+      speciality: "Organic Solutions",
+      distance: "5.1 km"
+    },
+    {
+      name: "East Africa Seeds Co.",
+      location: "Eldoret",
+      phone: "+254 733 456 789",
+      speciality: "Seeds & Fertilizers",
+      distance: "8.3 km"
+    }
+  ];
+
+  const handleGetTreatmentGuide = () => {
+    navigate("/treatment-guide");
+    toast({
+      title: "Redirecting",
+      description: "Opening treatment guide for your detected disease",
+    });
+  };
+
+  const handleReportToCommunity = () => {
+    navigate("/community");
+    toast({
+      title: "Community Reports",
+      description: "Share your findings with the farming community",
+    });
+  };
+
+  const handleFindSupplier = () => {
+    setSupplierDialogOpen(true);
+  };
+
   if (isLoading) {
     return (
       <Card className="w-full">
@@ -124,13 +177,27 @@ const DetectionResults = ({ results, isLoading }: DetectionResultsProps) => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                <Button size="sm" className="bg-agriculture-primary hover:bg-agriculture-primary/90 flex-1">
+                <Button 
+                  size="sm" 
+                  className="bg-agriculture-primary hover:bg-agriculture-primary/90 flex-1"
+                  onClick={handleGetTreatmentGuide}
+                >
                   Get Treatment Guide
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleReportToCommunity}
+                >
                   Report to Community
                 </Button>
-                <Button size="sm" variant="outline" className="flex-1">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={handleFindSupplier}
+                >
                   <MapPin className="h-4 w-4 mr-1" />
                   Find Supplier
                 </Button>
@@ -147,6 +214,49 @@ const DetectionResults = ({ results, isLoading }: DetectionResultsProps) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Supplier Dialog */}
+      <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center">
+              <MapPin className="h-5 w-5 mr-2 text-agriculture-primary" />
+              Nearby Agricultural Suppliers
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            {suppliers.map((supplier, index) => (
+              <Card key={index} className="p-3">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-start">
+                    <h4 className="font-medium text-sm">{supplier.name}</h4>
+                    <Badge variant="outline" className="text-xs">{supplier.distance}</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{supplier.speciality}</p>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      <span>{supplier.location}</span>
+                    </div>
+                    <Button size="sm" variant="outline" className="h-6 text-xs">
+                      <Phone className="h-3 w-3 mr-1" />
+                      Call
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+            <Button 
+              variant="outline" 
+              className="w-full mt-3"
+              onClick={() => setSupplierDialogOpen(false)}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              View All Suppliers
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
